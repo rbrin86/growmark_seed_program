@@ -1,4 +1,4 @@
-import streamlit as st
+=import streamlit as st
 import pandas as pd
 
 # ---------- Session State Setup ----------
@@ -10,31 +10,28 @@ if "submitted_offers" not in st.session_state:
     st.session_state.submitted_offers = []
 if "offer_submitted" not in st.session_state:
     st.session_state.offer_submitted = False
-if "logout_triggered" not in st.session_state:
-    st.session_state.logout_triggered = False
-if "login_triggered" not in st.session_state:
-    st.session_state.login_triggered = False
+if "trigger_rerun" not in st.session_state:
+    st.session_state.trigger_rerun = False
 
 # ---------- Login Screen ----------
 def login_screen():
     st.title("Login")
-
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
         st.session_state.logged_in = True
         st.session_state.user = username
-        st.session_state.login_triggered = True
+        st.session_state.trigger_rerun = True
 
 # ---------- Main App ----------
 def main_app():
     st.sidebar.write(f"Logged in as {st.session_state.user}")
-
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.user = None
-        st.session_state.logout_triggered = True
+        st.session_state.trigger_rerun = True
+        return
 
     selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
     if selection == "Offer Entry":
@@ -46,7 +43,6 @@ def main_app():
 def show_offer_form():
     st.title("Rebate Offer Entry")
 
-    # Static data
     member_retailers = ["Retailer A", "Retailer B", "Retailer C"]
     crop_specialists = {
         "Retailer A": ["Alice Smith", "Bob Jones"],
@@ -70,7 +66,6 @@ def show_offer_form():
         "Frank Miller": 7000
     }
 
-    # Clear form inputs after successful submission
     if st.session_state.offer_submitted:
         for key in ["retailer", "specialist", "grower", "competitive_brand", "rationale", "offer_name", "brand", "volume", "uom", "offer_per_uom"]:
             if key in st.session_state:
@@ -126,15 +121,12 @@ def show_history():
     df = pd.DataFrame(st.session_state.submitted_offers)
     st.dataframe(df)
 
-# ---------- Top-Level Control ----------
-# Handle login/logout reruns safely
-if st.session_state.logout_triggered:
-    st.session_state.logout_triggered = False
+# ---------- Final rerun handler ----------
+if st.session_state.get("trigger_rerun", False):
+    st.session_state.trigger_rerun = False
     st.experimental_rerun()
-elif st.session_state.login_triggered:
-    st.session_state.login_triggered = False
-    st.experimental_rerun()
-elif st.session_state.logged_in:
-    main_app()
 else:
-    login_screen()
+    if st.session_state.logged_in:
+        main_app()
+    else:
+        login_screen()
