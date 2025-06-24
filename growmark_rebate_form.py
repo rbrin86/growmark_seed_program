@@ -3,76 +3,57 @@ import streamlit as st
 # ---------- Session State Setup ----------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "login_attempt" not in st.session_state:
+    st.session_state.login_attempt = False
+if "logout_attempt" not in st.session_state:
+    st.session_state.logout_attempt = False
 
 # ---------- Login Screen ----------
 def login_screen():
-    st.markdown("""
-        <style>
-            .stApp {
-                background-image: url("https://images.unsplash.com/photo-1602526210318-73ec0b8d8248?auto=format&fit=crop&w=1350&q=80");
-                background-size: cover;
-                background-position: center;
-            }
-            .login-box {
-                background-color: rgba(255, 255, 255, 0.9);
-                padding: 2rem;
-                border-radius: 1rem;
-                max-width: 400px;
-                margin: auto;
-                margin-top: 5rem;
-                box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    st.title("Login")
 
-    st.markdown('<div class="login-box">', unsafe_allow_html=True)
-    st.header("Smartwyre Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
+
     if st.button("Login"):
-        if username and password:
-            st.session_state.logged_in = True
-            st.session_state.user = username
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.session_state.logged_in = True
+        st.session_state.user = username
+        st.session_state.login_attempt = True
+        st.rerun()
 
-# ---------- Main App UI ----------
+# ---------- Main App ----------
 def main_app():
-    st.set_page_config(page_title="Smartwyre", layout="centered")
-    st.markdown(
-        """
-        <style>
-        h1 {color: #2a733b;}
-        .css-18e3th9 {background-color: #ffffff;}
-        .st-bx {background-color: #ffffff;}
-        </style>
-        """, unsafe_allow_html=True)
+    st.title("Rebate Offer Entry")
 
-    st.sidebar.success(f"Logged in as {st.session_state.user}")
+    st.sidebar.write(f"Logged in as {st.session_state.user}")
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
+        st.session_state.user = None
+        st.session_state.logout_attempt = True
+        st.rerun()
 
-    selection = st.sidebar.radio("Menu", ["Growmark Seed Program Entry"])
-    if selection == "Growmark Seed Program Entry":
-        show_seed_form()
+    selection = st.sidebar.radio("Menu", ["Offer Entry"])
+    if selection == "Offer Entry":
+        show_offer_form()
 
-# ---------- Growmark Offer Form ----------
-def show_seed_form():
-    st.title("Growmark Seed Program Entry")
-
+# ---------- Offer Entry Form ----------
+def show_offer_form():
     # Hardcoded Data
-    member_retailers = ["FS Central", "FS Heartland", "FS Illinois"]
+    member_retailers = ["Retailer A", "Retailer B", "Retailer C"]
     crop_specialists = {
-        "FS Central": ["Alice Smith", "Bob Jones"],
-        "FS Heartland": ["Carla Evans", "David Kim"],
-        "FS Illinois": ["Ellen Johnson", "Frank Miller"]
+        "Retailer A": ["Alice Smith", "Bob Jones"],
+        "Retailer B": ["Carla Evans", "David Kim"],
+        "Retailer C": ["Ellen Johnson", "Frank Miller"]
     }
     growers = ["John Deere", "Mary Agri", "Bob Farm", "Jane Ranch"]
-    competitive_brands = ["Pioneer", "Dekalb", "Channel", "Stine"]
-    rebate_offers = ["Early Commit", "Volume Bonus", "Competitive Match"]
+    competitive_brands = ["Brand X", "Brand Y", "Brand Z"]
+    rebate_offers = ["Offer 1", "Offer 2", "Offer 3"]
     brands_sold = {
-        "Early Commit": ["Growmark Seed A", "Growmark Seed B"],
-        "Volume Bonus": ["Growmark Seed C", "Growmark Seed D"],
-        "Competitive Match": ["Growmark Seed B", "Growmark Seed D"]
+        "Offer 1": ["Product A", "Product B"],
+        "Offer 2": ["Product C", "Product D"],
+        "Offer 3": ["Product B", "Product D"]
     }
     uoms = ["Bag", "Unit"]
     budgets = {
@@ -84,22 +65,22 @@ def show_seed_form():
         "Frank Miller": 7000
     }
 
-    retailer = st.selectbox("Member Retailer", member_retailers)
-    specialist = st.selectbox("Crop Specialist", crop_specialists.get(retailer, []))
+    retailer = st.selectbox("Retailer", member_retailers)
+    specialist = st.selectbox("Salesperson", crop_specialists.get(retailer, []))
     budget_total = budgets.get(specialist, 0)
 
-    grower = st.text_input("Grower Name", "")
-    competitive_brand = st.selectbox("Current Competitive Brand", competitive_brands)
+    grower = st.text_input("Grower Name")
+    competitive_brand = st.selectbox("Competitive Brand", competitive_brands)
     rationale = st.text_area("Competitive Rationale")
 
-    offer_name = st.selectbox("Rebate Offer Name", rebate_offers)
-    brand = st.selectbox("Brand Sold", brands_sold.get(offer_name, []))
-    volume = st.number_input("Volume Committed", min_value=0.0, step=1.0)
+    offer_name = st.selectbox("Rebate Offer", rebate_offers)
+    brand = st.selectbox("Product Sold", brands_sold.get(offer_name, []))
+    volume = st.number_input("Volume", min_value=0.0, step=1.0)
     uom = st.selectbox("Unit of Measure", uoms)
-    offer_per_uom = st.number_input("Offer per UOM ($)", min_value=0.0, step=1.0)
+    offer_per_uom = st.number_input("Offer per Unit ($)", min_value=0.0, step=1.0)
 
     offer_total = volume * offer_per_uom
-    st.metric("Offer Total ($)", f"{offer_total:,.2f}")
+    st.metric("Total Offer Value ($)", f"{offer_total:,.2f}")
 
     st.subheader("Budget Overview")
     budget_used = offer_total
@@ -111,7 +92,7 @@ def show_seed_form():
     if st.button("Submit Offer"):
         st.success(f"Submitted offer for '{grower}' under '{offer_name}'.")
 
-# ---------- Run App ----------
+# ---------- Run ----------
 if st.session_state.logged_in:
     main_app()
 else:
