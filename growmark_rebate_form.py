@@ -1,6 +1,6 @@
 import streamlit as st
 
-# ---------- Session State Login ----------
+# ---------- Session State Setup ----------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
@@ -20,21 +20,20 @@ def login_screen():
                 max-width: 400px;
                 margin: auto;
                 margin-top: 5rem;
+                box-shadow: 0 0 10px rgba(0,0,0,0.2);
             }
         </style>
     """, unsafe_allow_html=True)
 
-    with st.container():
-        st.markdown('<div class="login-box">', unsafe_allow_html=True)
-        st.header("Smartwyre Login")
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        if st.button("Login"):
-            if username and password:
-                st.session_state.logged_in = True
-                st.session_state.user = username
-                st.experimental_rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="login-box">', unsafe_allow_html=True)
+    st.header("Smartwyre Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if username and password:
+            st.session_state.logged_in = True
+            st.session_state.user = username
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------- Main App UI ----------
 def main_app():
@@ -42,15 +41,17 @@ def main_app():
     st.markdown(
         """
         <style>
-        .main {background-color: #ffffff;}
         h1 {color: #2a733b;}
         .css-18e3th9 {background-color: #ffffff;}
+        .st-bx {background-color: #ffffff;}
         </style>
         """, unsafe_allow_html=True)
 
     st.sidebar.success(f"Logged in as {st.session_state.user}")
-    selection = st.sidebar.radio("Menu", ["Growmark Seed Program Entry"])
+    if st.sidebar.button("Logout"):
+        st.session_state.logged_in = False
 
+    selection = st.sidebar.radio("Menu", ["Growmark Seed Program Entry"])
     if selection == "Growmark Seed Program Entry":
         show_seed_form()
 
