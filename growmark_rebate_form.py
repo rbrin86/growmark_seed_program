@@ -19,7 +19,7 @@ def login_screen():
     if st.button("Login"):
         st.session_state.logged_in = True
         st.session_state.user = username
-        st.rerun()
+        st.experimental_rerun()
 
 # ---------- Main App ----------
 def main_app():
@@ -29,7 +29,7 @@ def main_app():
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.user = None
-        st.rerun()
+        st.experimental_rerun()
 
     selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
     if selection == "Offer Entry":
@@ -106,10 +106,8 @@ def show_offer_form():
         }
         st.session_state.submitted_offers.append(new_offer)
 
-        st.success(
-            f"✅ Submitted offer for ${offer_total:,.2f} under rebate '{offer_name}' for {specialist}, "
-            f"who has a remaining budget of ${remaining_budget:,.2f} after this offer."
-        )
+        st.text("Offer Submitted Successfully")
+
         st.experimental_rerun()
 
 # ---------- History View ----------
