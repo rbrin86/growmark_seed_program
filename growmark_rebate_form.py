@@ -43,6 +43,7 @@ def main_app():
 def show_offer_form():
     st.title("Rebate Offer Entry")
 
+    # Static Data
     member_retailers = ["Retailer A", "Retailer B", "Retailer C"]
     crop_specialists = {
         "Retailer A": ["Alice Smith", "Bob Jones"],
@@ -66,12 +67,17 @@ def show_offer_form():
         "Frank Miller": 7000
     }
 
+    # Clear form inputs after successful submission
     if st.session_state.offer_submitted:
-        for key in ["retailer", "specialist", "grower", "competitive_brand", "rationale", "offer_name", "brand", "volume", "uom", "offer_per_uom"]:
+        for key in [
+            "retailer", "specialist", "grower", "competitive_brand",
+            "rationale", "offer_name", "brand", "volume", "uom", "offer_per_uom"
+        ]:
             if key in st.session_state:
                 del st.session_state[key]
         st.session_state.offer_submitted = False
 
+    # Form Inputs
     retailer = st.selectbox("Retailer", member_retailers, key="retailer")
     specialist = st.selectbox("Salesperson", crop_specialists.get(retailer, []), key="specialist")
     budget_total = budgets.get(specialist, 0)
@@ -115,16 +121,18 @@ def show_offer_form():
 # ---------- History View ----------
 def show_history():
     st.title("Submitted Offers History")
+
     if not st.session_state.submitted_offers:
         st.info("No offers submitted yet.")
         return
+
     df = pd.DataFrame(st.session_state.submitted_offers)
     st.dataframe(df)
 
-# ---------- Final rerun handler ----------
+# ---------- Final Rerun Handler ----------
 if st.session_state.get("trigger_rerun", False):
     st.session_state.trigger_rerun = False
-    st.experimental_rerun()
+    st.rerun()
 else:
     if st.session_state.logged_in:
         main_app()
