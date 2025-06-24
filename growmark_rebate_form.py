@@ -93,4 +93,68 @@ def show_offer_form():
                 del st.session_state[key]
         st.session_state.offer_submitted = False
 
-    retailer = st.selectbox("Retailer", member_retailers, key="retailer")_
+    retailer = st.selectbox("Retailer", member_retailers, key="retailer")
+    specialist = st.selectbox("Salesperson", crop_specialists.get(retailer, []), key="specialist")
+    budget_total = budgets.get(specialist, 0)
+
+    # Grower dropdown with custom label
+    grower_labels = [f"{g['name']} (GLN: {g['gln']}) — {g['address']}" for g in growers]
+    selected_label = st.selectbox("Grower", grower_labels, key="grower")
+    selected_grower = next(g for g in growers if f"{g['name']} (GLN: {g['gln']}) — {g['address']}" == selected_label)
+
+    competitive_brand = st.selectbox("Competitive Brand", competitive_brands, key="competitive_brand")
+    rationale = st.text_area("Competitive Rationale", key="rationale")
+
+    offer_name = st.selectbox("Rebate Offer", rebate_offers, key="offer_name")
+    brand = st.selectbox("Product Sold", brands_sold.get(offer_name, []), key="brand")
+    volume = st.number_input("Volume", min_value=0.0, step=1.0, key="volume")
+    uom = st.selectbox("Unit of Measure", uoms, key="uom")
+    offer_per_uom = st.number_input("Offer per Unit ($)", min_value=0.0, step=1.0, key="offer_per_uom")
+
+    offer_total = volume * offer_per_uom
+    st.metric("Total Offer Value ($)", f"{offer_total:,.2f}")
+
+    st.subheader("Budget Overview")
+    st.write(f"Total Budget: ${budget_total:,.2f}")
+    st.write(f"Used: ${offer_total:,.2f}")
+    st.write(f"Remaining: ${max(0, budget_total - offer_total):,.2f}")
+
+    if st.button("Submit Offer"):
+        new_offer = {
+            "Retailer": retailer,
+            "Salesperson": specialist,
+            "Grower": selected_grower["name"],
+            "GLN": selected_grower["gln"],
+            "Address": selected_grower["address"],
+            "Competitive Brand": competitive_brand,
+            "Rationale": rationale,
+            "Rebate Offer": offer_name,
+            "Product Sold": brand,
+            "Volume": volume,
+            "Unit of Measure": uom,
+            "Offer per Unit ($)": offer_per_uom,
+            "Offer Total": offer_total,
+        }
+        st.session_state.submitted_offers.append(new_offer)
+        st.success(f"Submitted offer for '{selected_grower['name']}' under '{offer_name}'.")
+        st.session_state.offer_submitted = True
+
+# ---------- History View ----------
+def show_history():
+    st.title("Submitted Offers History")
+
+    if not st.session_state.submitted_offers:
+        st.info("No offers submitted yet.")
+        return
+
+    df = pd.DataFrame(st.session_state.submitted_offers)
+    st.dataframe(df)
+
+# ---------- Final Rerun Handler ----------
+if st.session_state.action:
+    st.session_state.action = None
+    st.rerun()
+elif st.session_state.logged_in:
+    main_app()
+else:
+    login_screen()
