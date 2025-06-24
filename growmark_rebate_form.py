@@ -6,12 +6,10 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "user" not in st.session_state:
     st.session_state.user = None
-if "login_attempt" not in st.session_state:
-    st.session_state.login_attempt = False
-if "logout_attempt" not in st.session_state:
-    st.session_state.logout_attempt = False
 if "submitted_offers" not in st.session_state:
     st.session_state.submitted_offers = []
+if "offer_submitted" not in st.session_state:
+    st.session_state.offer_submitted = False  # flag to clear form on submit
 
 # ---------- Login Screen ----------
 def login_screen():
@@ -23,8 +21,7 @@ def login_screen():
     if st.button("Login"):
         st.session_state.logged_in = True
         st.session_state.user = username
-        st.session_state.login_attempt = True
-        # Trigger rerun by setting query params
+        # Trigger rerun via query params, no experimental_rerun here
         st.query_params = {"_rerun": ["1"]}
 
 # ---------- Main App ----------
@@ -35,8 +32,6 @@ def main_app():
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.user = None
-        st.session_state.logout_attempt = True
-        # Trigger rerun by setting query params
         st.query_params = {"_rerun": ["1"]}
 
     selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
@@ -54,7 +49,6 @@ def show_offer_form():
         "Retailer B": ["Carla Evans", "David Kim"],
         "Retailer C": ["Ellen Johnson", "Frank Miller"]
     }
-    growers = ["John Deere", "Mary Agri", "Bob Farm", "Jane Ranch"]
     competitive_brands = ["Brand X", "Brand Y", "Brand Z"]
     rebate_offers = ["Offer 1", "Offer 2", "Offer 3"]
     brands_sold = {
@@ -72,19 +66,39 @@ def show_offer_form():
         "Frank Miller": 7000
     }
 
-    retailer = st.selectbox("Retailer", member_retailers)
-    specialist = st.selectbox("Salesperson", crop_specialists.get(retailer, []))
+    # Reset inputs after submit (controlled by flag)
+    if st.session_state.offer_submitted:
+        # Clear inputs by resetting session_state or providing default values
+        default_values = {
+            "retailer": None,
+            "specialist": None,
+            "grower": "",
+            "competitive_brand": None,
+            "rationale": "",
+            "offer_name": None,
+            "brand": None,
+            "volume": 0.0,
+            "uom": None,
+            "offer_per_uom": 0.0
+        }
+        for key in default_values:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.session_state.offer_submitted = False
+
+    retailer = st.selectbox("Retailer", member_retailers, key="retailer")
+    specialist = st.selectbox("Salesperson", crop_specialists.get(retailer, []), key="specialist")
     budget_total = budgets.get(specialist, 0)
 
-    grower = st.text_input("Grower Name")
-    competitive_brand = st.selectbox("Competitive Brand", competitive_brands)
-    rationale = st.text_area("Competitive Rationale")
+    grower = st.text_input("Grower Name", key="grower")
+    competitive_brand = st.selectbox("Competitive Brand", competitive_brands, key="competitive_brand")
+    rationale = st.text_area("Competitive Rationale", key="rationale")
 
-    offer_name = st.selectbox("Rebate Offer", rebate_offers)
-    brand = st.selectbox("Product Sold", brands_sold.get(offer_name, []))
-    volume = st.number_input("Volume", min_value=0.0, step=1.0)
-    uom = st.selectbox("Unit of Measure", uoms)
-    offer_per_uom = st.number_input("Offer per Unit ($)", min_value=0.0, step=1.0)
+    offer_name = st.selectbox("Rebate Offer", rebate_offers, key="offer_name")
+    brand = st.selectbox("Product Sold", brands_sold.get(offer_name, []), key="brand")
+    volume = st.number_input("Volume", min_value=0.0, step=1.0, key="volume")
+    uom = st.selectbox("Unit of Measure", uoms, key="uom")
+    offer_per_uom = st.number_input("Offer per Unit ($)", min_value=0.0, step=1.0, key="offer_per_uom")
 
     offer_total = volume * offer_per_uom
     st.metric("Total Offer Value ($)", f"{offer_total:,.2f}")
@@ -113,7 +127,9 @@ def show_offer_form():
         st.session_state.submitted_offers.append(new_offer)
 
         st.success(f"Submitted offer for '{grower}' under '{offer_name}'.")
-        st.experimental_rerun()
+        # Set flag to reset form inputs on next rerun
+        st.session_state.offer_submitted = True
+        # No st.experimental_rerun() here to avoid errors / double reruns
 
 # ---------- History View ----------
 def show_history():
