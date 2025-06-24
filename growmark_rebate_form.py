@@ -24,7 +24,8 @@ def login_screen():
         st.session_state.logged_in = True
         st.session_state.user = username
         st.session_state.login_attempt = True
-        st.experimental_set_query_params(_rerun=1)
+        # Trigger rerun by setting query params
+        st.query_params = {"_rerun": ["1"]}
 
 # ---------- Main App ----------
 def main_app():
@@ -35,7 +36,8 @@ def main_app():
         st.session_state.logged_in = False
         st.session_state.user = None
         st.session_state.logout_attempt = True
-        st.experimental_set_query_params(_rerun=1)
+        # Trigger rerun by setting query params
+        st.query_params = {"_rerun": ["1"]}
 
     selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
     if selection == "Offer Entry":
@@ -95,7 +97,6 @@ def show_offer_form():
     st.write(f"Remaining: ${remaining_budget:,.2f}")
 
     if st.button("Submit Offer"):
-        # Append offer to session state list
         new_offer = {
             "Retailer": retailer,
             "Salesperson": specialist,
