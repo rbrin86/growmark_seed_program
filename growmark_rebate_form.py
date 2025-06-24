@@ -21,18 +21,15 @@ def login_screen():
     if st.button("Login"):
         st.session_state.logged_in = True
         st.session_state.user = username
-        # Trigger rerun via query params, no experimental_rerun here
-        st.query_params = {"_rerun": ["1"]}
+        st.experimental_rerun()  # rerun here to reload after login
 
 # ---------- Main App ----------
 def main_app():
-    st.title("Rebate Offer Entry")
-
     st.sidebar.write(f"Logged in as {st.session_state.user}")
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.user = None
-        st.query_params = {"_rerun": ["1"]}
+        st.experimental_rerun()  # rerun here to reload after logout
 
     selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
     if selection == "Offer Entry":
@@ -42,6 +39,8 @@ def main_app():
 
 # ---------- Offer Entry Form ----------
 def show_offer_form():
+    st.title("Rebate Offer Entry")  # moved title here
+
     # Hardcoded Data
     member_retailers = ["Retailer A", "Retailer B", "Retailer C"]
     crop_specialists = {
@@ -68,20 +67,9 @@ def show_offer_form():
 
     # Reset inputs after submit (controlled by flag)
     if st.session_state.offer_submitted:
-        # Clear inputs by resetting session_state or providing default values
-        default_values = {
-            "retailer": None,
-            "specialist": None,
-            "grower": "",
-            "competitive_brand": None,
-            "rationale": "",
-            "offer_name": None,
-            "brand": None,
-            "volume": 0.0,
-            "uom": None,
-            "offer_per_uom": 0.0
-        }
-        for key in default_values:
+        keys_to_clear = ["retailer", "specialist", "grower", "competitive_brand", "rationale",
+                         "offer_name", "brand", "volume", "uom", "offer_per_uom"]
+        for key in keys_to_clear:
             if key in st.session_state:
                 del st.session_state[key]
         st.session_state.offer_submitted = False
@@ -127,13 +115,11 @@ def show_offer_form():
         st.session_state.submitted_offers.append(new_offer)
 
         st.success(f"Submitted offer for '{grower}' under '{offer_name}'.")
-        # Set flag to reset form inputs on next rerun
         st.session_state.offer_submitted = True
-        # No st.experimental_rerun() here to avoid errors / double reruns
 
 # ---------- History View ----------
 def show_history():
-    st.title("Submitted Offers History")
+    st.title("Submitted Offers History")  # moved title here
 
     if not st.session_state.submitted_offers:
         st.info("No offers submitted yet.")
