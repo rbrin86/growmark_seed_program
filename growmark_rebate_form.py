@@ -10,8 +10,8 @@ if "submitted_offers" not in st.session_state:
     st.session_state.submitted_offers = []
 if "offer_submitted" not in st.session_state:
     st.session_state.offer_submitted = False
-if "trigger_rerun" not in st.session_state:
-    st.session_state.trigger_rerun = False
+if "action" not in st.session_state:
+    st.session_state.action = None  # will be 'login' or 'logout'
 
 # ---------- Login Screen ----------
 def login_screen():
@@ -22,7 +22,7 @@ def login_screen():
     if st.button("Login"):
         st.session_state.logged_in = True
         st.session_state.user = username
-        st.session_state.trigger_rerun = True
+        st.session_state.action = "login"
 
 # ---------- Main App ----------
 def main_app():
@@ -30,7 +30,7 @@ def main_app():
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.user = None
-        st.session_state.trigger_rerun = True
+        st.session_state.action = "logout"
         return
 
     selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
@@ -43,7 +43,6 @@ def main_app():
 def show_offer_form():
     st.title("Rebate Offer Entry")
 
-    # Static Data
     member_retailers = ["Retailer A", "Retailer B", "Retailer C"]
     crop_specialists = {
         "Retailer A": ["Alice Smith", "Bob Jones"],
@@ -67,7 +66,6 @@ def show_offer_form():
         "Frank Miller": 7000
     }
 
-    # Clear form inputs after successful submission
     if st.session_state.offer_submitted:
         for key in [
             "retailer", "specialist", "grower", "competitive_brand",
@@ -77,7 +75,6 @@ def show_offer_form():
                 del st.session_state[key]
         st.session_state.offer_submitted = False
 
-    # Form Inputs
     retailer = st.selectbox("Retailer", member_retailers, key="retailer")
     specialist = st.selectbox("Salesperson", crop_specialists.get(retailer, []), key="specialist")
     budget_total = budgets.get(specialist, 0)
@@ -130,11 +127,10 @@ def show_history():
     st.dataframe(df)
 
 # ---------- Final Rerun Handler ----------
-if st.session_state.get("trigger_rerun", False):
-    st.session_state.trigger_rerun = False
+if st.session_state.action:
+    st.session_state.action = None
     st.rerun()
+elif st.session_state.logged_in:
+    main_app()
 else:
-    if st.session_state.logged_in:
-        main_app()
-    else:
-        login_screen()
+    login_screen()
