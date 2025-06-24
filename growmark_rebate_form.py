@@ -9,7 +9,11 @@ if "user" not in st.session_state:
 if "submitted_offers" not in st.session_state:
     st.session_state.submitted_offers = []
 if "offer_submitted" not in st.session_state:
-    st.session_state.offer_submitted = False  # flag to clear form on submit
+    st.session_state.offer_submitted = False
+if "logout_triggered" not in st.session_state:
+    st.session_state.logout_triggered = False
+if "login_triggered" not in st.session_state:
+    st.session_state.login_triggered = False
 
 # ---------- Login Screen ----------
 def login_screen():
@@ -21,8 +25,7 @@ def login_screen():
     if st.button("Login"):
         st.session_state.logged_in = True
         st.session_state.user = username
-        st.experimental_rerun()
-        return  # Stop further execution after rerun
+        st.session_state.login_triggered = True
 
 # ---------- Main App ----------
 def main_app():
@@ -31,8 +34,7 @@ def main_app():
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.user = None
-        st.experimental_rerun()
-        return  # Stop further execution after rerun
+        st.session_state.logout_triggered = True
 
     selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
     if selection == "Offer Entry":
@@ -44,7 +46,7 @@ def main_app():
 def show_offer_form():
     st.title("Rebate Offer Entry")
 
-    # Hardcoded Data
+    # Static data
     member_retailers = ["Retailer A", "Retailer B", "Retailer C"]
     crop_specialists = {
         "Retailer A": ["Alice Smith", "Bob Jones"],
@@ -68,12 +70,9 @@ def show_offer_form():
         "Frank Miller": 7000
     }
 
+    # Clear form inputs after successful submission
     if st.session_state.offer_submitted:
-        keys_to_clear = [
-            "retailer", "specialist", "grower", "competitive_brand", "rationale",
-            "offer_name", "brand", "volume", "uom", "offer_per_uom"
-        ]
-        for key in keys_to_clear:
+        for key in ["retailer", "specialist", "grower", "competitive_brand", "rationale", "offer_name", "brand", "volume", "uom", "offer_per_uom"]:
             if key in st.session_state:
                 del st.session_state[key]
         st.session_state.offer_submitted = False
@@ -96,11 +95,9 @@ def show_offer_form():
     st.metric("Total Offer Value ($)", f"{offer_total:,.2f}")
 
     st.subheader("Budget Overview")
-    budget_used = offer_total
-    remaining_budget = max(0, budget_total - budget_used)
     st.write(f"Total Budget: ${budget_total:,.2f}")
-    st.write(f"Used: ${budget_used:,.2f}")
-    st.write(f"Remaining: ${remaining_budget:,.2f}")
+    st.write(f"Used: ${offer_total:,.2f}")
+    st.write(f"Remaining: ${max(0, budget_total - offer_total):,.2f}")
 
     if st.button("Submit Offer"):
         new_offer = {
@@ -119,21 +116,25 @@ def show_offer_form():
         st.session_state.submitted_offers.append(new_offer)
         st.success(f"Submitted offer for '{grower}' under '{offer_name}'.")
         st.session_state.offer_submitted = True
-        # No rerun here — form will reset on next interaction
 
 # ---------- History View ----------
 def show_history():
     st.title("Submitted Offers History")
-
     if not st.session_state.submitted_offers:
         st.info("No offers submitted yet.")
         return
-
     df = pd.DataFrame(st.session_state.submitted_offers)
     st.dataframe(df)
 
-# ---------- Run ----------
-if st.session_state.logged_in:
+# ---------- Top-Level Control ----------
+# Handle login/logout reruns safely
+if st.session_state.logout_triggered:
+    st.session_state.logout_triggered = False
+    st.experimental_rerun()
+elif st.session_state.login_triggered:
+    st.session_state.login_triggered = False
+    st.experimental_rerun()
+elif st.session_state.logged_in:
     main_app()
 else:
     login_screen()
