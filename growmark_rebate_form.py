@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 # ---------- Session State Setup ----------
 if "logged_in" not in st.session_state:
@@ -9,6 +10,8 @@ if "login_attempt" not in st.session_state:
     st.session_state.login_attempt = False
 if "logout_attempt" not in st.session_state:
     st.session_state.logout_attempt = False
+if "submitted_offers" not in st.session_state:
+    st.session_state.submitted_offers = []
 
 # ---------- Login Screen ----------
 def login_screen():
@@ -21,7 +24,7 @@ def login_screen():
         st.session_state.logged_in = True
         st.session_state.user = username
         st.session_state.login_attempt = True
-        st.rerun()
+        st.experimental_rerun()
 
 # ---------- Main App ----------
 def main_app():
@@ -32,11 +35,13 @@ def main_app():
         st.session_state.logged_in = False
         st.session_state.user = None
         st.session_state.logout_attempt = True
-        st.rerun()
+        st.experimental_rerun()
 
-    selection = st.sidebar.radio("Menu", ["Offer Entry"])
+    selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
     if selection == "Offer Entry":
         show_offer_form()
+    elif selection == "History":
+        show_history()
 
 # ---------- Offer Entry Form ----------
 def show_offer_form():
@@ -90,7 +95,35 @@ def show_offer_form():
     st.write(f"Remaining: ${remaining_budget:,.2f}")
 
     if st.button("Submit Offer"):
+        # Append offer to session state list
+        new_offer = {
+            "Retailer": retailer,
+            "Salesperson": specialist,
+            "Grower": grower,
+            "Competitive Brand": competitive_brand,
+            "Rationale": rationale,
+            "Rebate Offer": offer_name,
+            "Product Sold": brand,
+            "Volume": volume,
+            "Unit of Measure": uom,
+            "Offer per Unit ($)": offer_per_uom,
+            "Offer Total": offer_total,
+        }
+        st.session_state.submitted_offers.append(new_offer)
+
         st.success(f"Submitted offer for '{grower}' under '{offer_name}'.")
+        st.experimental_rerun()
+
+# ---------- History View ----------
+def show_history():
+    st.title("Submitted Offers History")
+
+    if not st.session_state.submitted_offers:
+        st.info("No offers submitted yet.")
+        return
+
+    df = pd.DataFrame(st.session_state.submitted_offers)
+    st.dataframe(df)
 
 # ---------- Run ----------
 if st.session_state.logged_in:
