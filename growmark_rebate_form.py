@@ -24,7 +24,7 @@ def login_screen():
         st.session_state.logged_in = True
         st.session_state.user = username
         st.session_state.login_attempt = True
-        st.experimental_rerun()
+        st.experimental_set_query_params(_rerun=1)
 
 # ---------- Main App ----------
 def main_app():
@@ -35,7 +35,7 @@ def main_app():
         st.session_state.logged_in = False
         st.session_state.user = None
         st.session_state.logout_attempt = True
-        st.experimental_rerun()
+        st.experimental_set_query_params(_rerun=1)
 
     selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
     if selection == "Offer Entry":
