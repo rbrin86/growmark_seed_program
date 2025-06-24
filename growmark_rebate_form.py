@@ -21,15 +21,18 @@ def login_screen():
     if st.button("Login"):
         st.session_state.logged_in = True
         st.session_state.user = username
-        st.experimental_rerun()  # rerun here to reload after login
+        st.experimental_rerun()
+        return  # Stop further execution after rerun
 
 # ---------- Main App ----------
 def main_app():
     st.sidebar.write(f"Logged in as {st.session_state.user}")
+
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.user = None
-        st.experimental_rerun()  # rerun here to reload after logout
+        st.experimental_rerun()
+        return  # Stop further execution after rerun
 
     selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
     if selection == "Offer Entry":
@@ -39,7 +42,7 @@ def main_app():
 
 # ---------- Offer Entry Form ----------
 def show_offer_form():
-    st.title("Rebate Offer Entry")  # moved title here
+    st.title("Rebate Offer Entry")
 
     # Hardcoded Data
     member_retailers = ["Retailer A", "Retailer B", "Retailer C"]
@@ -65,10 +68,11 @@ def show_offer_form():
         "Frank Miller": 7000
     }
 
-    # Reset inputs after submit (controlled by flag)
     if st.session_state.offer_submitted:
-        keys_to_clear = ["retailer", "specialist", "grower", "competitive_brand", "rationale",
-                         "offer_name", "brand", "volume", "uom", "offer_per_uom"]
+        keys_to_clear = [
+            "retailer", "specialist", "grower", "competitive_brand", "rationale",
+            "offer_name", "brand", "volume", "uom", "offer_per_uom"
+        ]
         for key in keys_to_clear:
             if key in st.session_state:
                 del st.session_state[key]
@@ -113,13 +117,13 @@ def show_offer_form():
             "Offer Total": offer_total,
         }
         st.session_state.submitted_offers.append(new_offer)
-
         st.success(f"Submitted offer for '{grower}' under '{offer_name}'.")
         st.session_state.offer_submitted = True
+        # No rerun here — form will reset on next interaction
 
 # ---------- History View ----------
 def show_history():
-    st.title("Submitted Offers History")  # moved title here
+    st.title("Submitted Offers History")
 
     if not st.session_state.submitted_offers:
         st.info("No offers submitted yet.")
