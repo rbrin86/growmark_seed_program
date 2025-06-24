@@ -1,14 +1,13 @@
 import streamlit as st
+import pandas as pd
 
 # ---------- Session State Setup ----------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "user" not in st.session_state:
     st.session_state.user = None
-if "login_attempt" not in st.session_state:
-    st.session_state.login_attempt = False
-if "logout_attempt" not in st.session_state:
-    st.session_state.logout_attempt = False
+if "submitted_offers" not in st.session_state:
+    st.session_state.submitted_offers = []
 
 # ---------- Login Screen ----------
 def login_screen():
@@ -20,23 +19,23 @@ def login_screen():
     if st.button("Login"):
         st.session_state.logged_in = True
         st.session_state.user = username
-        st.session_state.login_attempt = True
         st.rerun()
 
 # ---------- Main App ----------
 def main_app():
-    st.title("Rebate Offer Entry")
+    st.title("Rebate Offer Management")
 
     st.sidebar.write(f"Logged in as {st.session_state.user}")
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.user = None
-        st.session_state.logout_attempt = True
         st.rerun()
 
-    selection = st.sidebar.radio("Menu", ["Offer Entry"])
+    selection = st.sidebar.radio("Menu", ["Offer Entry", "History"])
     if selection == "Offer Entry":
         show_offer_form()
+    elif selection == "History":
+        show_history()
 
 # ---------- Offer Entry Form ----------
 def show_offer_form():
@@ -47,7 +46,6 @@ def show_offer_form():
         "Retailer B": ["Carla Evans", "David Kim"],
         "Retailer C": ["Ellen Johnson", "Frank Miller"]
     }
-    growers = ["John Deere", "Mary Agri", "Bob Farm", "Jane Ranch"]
     competitive_brands = ["Brand X", "Brand Y", "Brand Z"]
     rebate_offers = ["Offer 1", "Offer 2", "Offer 3"]
     brands_sold = {
@@ -83,14 +81,47 @@ def show_offer_form():
     st.metric("Total Offer Value ($)", f"{offer_total:,.2f}")
 
     st.subheader("Budget Overview")
-    budget_used = offer_total
-    remaining_budget = max(0, budget_total - budget_used)
+    budget_used = sum(
+        o["Offer Total"] for o in st.session_state.submitted_offers if o["Salesperson"] == specialist
+    )
+    remaining_budget = max(0, budget_total - budget_used - offer_total)
     st.write(f"Total Budget: ${budget_total:,.2f}")
-    st.write(f"Used: ${budget_used:,.2f}")
+    st.write(f"Used: ${budget_used + offer_total:,.2f}")
     st.write(f"Remaining: ${remaining_budget:,.2f}")
 
     if st.button("Submit Offer"):
-        st.success(f"Submitted offer for '{grower}' under '{offer_name}'.")
+        # Save offer details in session state
+        new_offer = {
+            "Retailer": retailer,
+            "Salesperson": specialist,
+            "Grower": grower,
+            "Competitive Brand": competitive_brand,
+            "Rationale": rationale,
+            "Rebate Offer": offer_name,
+            "Product Sold": brand,
+            "Volume": volume,
+            "Unit of Measure": uom,
+            "Offer per Unit ($)": offer_per_uom,
+            "Offer Total": offer_total,
+        }
+        st.session_state.submitted_offers.append(new_offer)
+
+        st.success(
+            f"✅ Submitted offer for ${offer_total:,.2f} under rebate '{offer_name}' for {specialist}, "
+            f"who has a remaining budget of ${remaining_budget:,.2f} after this offer."
+        )
+        st.experimental_rerun()
+
+# ---------- History View ----------
+def show_history():
+    st.title("Submitted Offers History")
+
+    if not st.session_state.submitted_offers:
+        st.info("No offers submitted yet.")
+        return
+
+    df = pd.DataFrame(st.session_state.submitted_offers)
+    st.dataframe(df)
 
 # ---------- Run ----------
 if st.session_state.logged_in:
